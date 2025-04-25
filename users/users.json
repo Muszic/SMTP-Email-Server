@@ -1,0 +1,35 @@
+[
+  {
+    "id": "bc47cdcc-8870-45d1-ac13-2de7258cfedd",
+    "username": "alice",
+    "email": "alice@example.com",
+    "password": {
+      "hash": "a3e9e41bf8450241a62a10f7904b8310fe06f8b621de1d50acfc34e6c327843d",
+      "salt": "dd9779b14dd04ef8bac951c1039192a3"
+    },
+    "created_at": "2025-04-24T00:28:12.580904",
+    "last_login": "2025-04-25T01:53:40.192326"
+  },
+  {
+    "id": "ac0c01fe-6b78-4027-8121-687e2b492060",
+    "username": "bob",
+    "email": "bob@example.com",
+    "password": {
+      "hash": "c14393d8cfa4209f14dede7b24567dabd0b2b6fc10b392b214fb2bf67fe197f9",
+      "salt": "bcafa12d78b04ce3beeab842ec1440de"
+    },
+    "created_at": "2025-04-24T00:28:12.581213",
+    "last_login": "2025-04-24T21:38:36.890578"
+  },
+  {
+    "id": "04e91925-94c3-4284-a4eb-3ed6c03ad920",
+    "username": "prabhkirat",
+    "email": "prabhkirat@example.com",
+    "password": {
+      "hash": "875a870fdfa6cbba9b347fe7832c2ef6291b1d1b0bfbef2858dbb0317be33295",
+      "salt": "96f6de66b6574947973a70331ec3b281"
+    },
+    "created_at": "2025-04-25T01:52:37.917831",
+    "last_login": "2025-04-25T01:52:53.473317"
+  }
+]

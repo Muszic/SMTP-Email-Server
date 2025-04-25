@@ -1,0 +1,22 @@
+Content-Type: multipart/mixed; boundary="===============3589590617754234165=="
+MIME-Version: 1.0
+From: alice@example.com
+To: bob@example.com
+Subject: Test Email from Alice to Bob
+Date: Thu, 24 Apr 2025 12:16:44 +0530
+
+--===============3589590617754234165==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+
+    Hello Bob,
+    
+    This is a test email sent from the user authentication mail client.
+    I hope you're doing well!
+    
+    Best regards,
+    Alice
+    
+--===============3589590617754234165==--

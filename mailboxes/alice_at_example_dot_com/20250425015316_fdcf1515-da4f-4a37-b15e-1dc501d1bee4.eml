@@ -1,0 +1,14 @@
+Content-Type: multipart/mixed; boundary="===============7468534449343656897=="
+MIME-Version: 1.0
+From: prabhkirat@example.com
+To: alice@example.com
+Subject: haat chutiye
+Date: Fri, 25 Apr 2025 01:53:16 +0530
+
+--===============7468534449343656897==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+nikal
+--===============7468534449343656897==--

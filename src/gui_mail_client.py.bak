@@ -1,0 +1,494 @@
+#!/usr/bin/env python3
+import tkinter as tk
+from tkinter import ttk, scrolledtext, messagebox
+import os
+import re
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+class MailClientGUI:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("SMTP Mail Client")
+        self.root.geometry("700x600")
+        self.root.minsize(600, 500)
+        
+        # Configure theme and colors
+        self.bg_color = "#f0f0f0"
+        self.accent_color = "#4a6ea9"
+        self.text_color = "#333333"
+        self.error_color = "#e74c3c"
+        self.success_color = "#2ecc71"
+        self.warning_color = "#f39c12"
+        
+        self.root.configure(bg=self.bg_color)
+        
+        # Set default mailbox directory
+        self.mailbox_dir = "mailboxes"
+        
+        # Set default SMTP settings from environment variables
+        self.smtp_host = os.getenv("SMTP_HOST", "127.0.0.1")
+        self.smtp_port = int(os.getenv("SMTP_PORT", "1025"))
+        
+        # Create and display the widgets
+        self.create_widgets()
+        
+        # Load email addresses with local mailboxes
+        self.load_local_addresses()
+    
+    def create_widgets(self):
+        """Create all the GUI widgets"""
+        # Create main frame
+        main_frame = ttk.Frame(self.root, padding=10)
+        main_frame.pack(fill=tk.BOTH, expand=True)
+        
+        # Create header
+        header_frame = ttk.Frame(main_frame)
+        header_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        title_label = ttk.Label(
+            header_frame, 
+            text="SMTP Mail Client", 
+            font=("Arial", 18, "bold"),
+            foreground=self.accent_color
+        )
+        title_label.pack(side=tk.LEFT)
+        
+        # Server info
+        server_info = ttk.Label(
+            header_frame,
+            text=f"Server: {self.smtp_host}:{self.smtp_port}",
+            font=("Arial", 10),
+            foreground=self.text_color
+        )
+        server_info.pack(side=tk.RIGHT, padx=5)
+        
+        # Create a tabbed interface
+        tab_control = ttk.Notebook(main_frame)
+        
+        # Compose email tab
+        compose_tab = ttk.Frame(tab_control, padding=10)
+        tab_control.add(compose_tab, text="Compose Email")
+        
+        # View mailboxes tab
+        mailbox_tab = ttk.Frame(tab_control, padding=10)
+        tab_control.add(mailbox_tab, text="Mailboxes")
+        
+        tab_control.pack(fill=tk.BOTH, expand=True)
+        
+        # Set up the compose tab
+        self.setup_compose_tab(compose_tab)
+        
+        # Set up the mailbox tab
+        self.setup_mailbox_tab(mailbox_tab)
+        
+        # Status bar at the bottom
+        self.status_var = tk.StringVar()
+        self.status_var.set("Ready")
+        
+        status_bar = ttk.Label(
+            main_frame, 
+            textvariable=self.status_var,
+            foreground=self.text_color,
+            relief=tk.SUNKEN, 
+            anchor=tk.W
+        )
+        status_bar.pack(fill=tk.X, side=tk.BOTTOM, pady=(5, 0))
+    
+    def setup_compose_tab(self, parent):
+        """Set up the compose email tab"""
+        # Sender frame
+        sender_frame = ttk.Frame(parent)
+        sender_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        sender_label = ttk.Label(sender_frame, text="From:", width=10)
+        sender_label.pack(side=tk.LEFT)
+        
+        self.sender_var = tk.StringVar()
+        self.sender_entry = ttk.Entry(sender_frame, textvariable=self.sender_var)
+        self.sender_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        sender_status = ttk.Label(sender_frame, text="", width=20)
+        sender_status.pack(side=tk.LEFT, padx=5)
+        self.sender_status = sender_status
+        
+        # Recipient frame
+        recipient_frame = ttk.Frame(parent)
+        recipient_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        recipient_label = ttk.Label(recipient_frame, text="To:", width=10)
+        recipient_label.pack(side=tk.LEFT)
+        
+        self.recipient_var = tk.StringVar()
+        self.recipient_var.trace("w", self.check_recipient)
+        
+        self.recipient_entry = ttk.Entry(recipient_frame, textvariable=self.recipient_var)
+        self.recipient_entry.pack(side=tk.LEFT, fill=tk.X, expand=True)
+        
+        self.recipient_status = ttk.Label(recipient_frame, text="", width=20)
+        self.recipient_status.pack(side=tk.LEFT, padx=5)
+        
+        # Subject frame
+        subject_frame = ttk.Frame(parent)
+        subject_frame.pack(fill=tk.X, pady=(0, 5))
+        
+        subject_label = ttk.Label(subject_frame, text="Subject:", width=10)
+        subject_label.pack(side=tk.LEFT)
+        
+        self.subject_var = tk.StringVar()
+        subject_entry = ttk.Entry(subject_frame, textvariable=self.subject_var)
+        subject_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 25))
+        
+        # Message body
+        body_frame = ttk.Frame(parent)
+        body_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        body_label = ttk.Label(body_frame, text="Message:", width=10, anchor=tk.NW)
+        body_label.pack(side=tk.LEFT, anchor=tk.N)
+        
+        self.body_text = scrolledtext.ScrolledText(
+            body_frame, 
+            wrap=tk.WORD,
+            height=10
+        )
+        self.body_text.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        
+        # Buttons frame
+        buttons_frame = ttk.Frame(parent)
+        buttons_frame.pack(fill=tk.X)
+        
+        self.send_button = ttk.Button(
+            buttons_frame, 
+            text="Send Email",
+            command=self.send_email
+        )
+        self.send_button.pack(side=tk.RIGHT)
+        
+        clear_button = ttk.Button(
+            buttons_frame, 
+            text="Clear",
+            command=self.clear_compose_form
+        )
+        clear_button.pack(side=tk.RIGHT, padx=5)
+        
+        # Add validation to email fields
+        self.sender_var.trace("w", self.check_sender)
+    
+    def setup_mailbox_tab(self, parent):
+        """Set up the mailbox tab"""
+        # Top frame for mailbox selection
+        mailbox_select_frame = ttk.Frame(parent)
+        mailbox_select_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        mailbox_label = ttk.Label(mailbox_select_frame, text="Mailbox:")
+        mailbox_label.pack(side=tk.LEFT)
+        
+        self.mailbox_var = tk.StringVar()
+        self.mailbox_combo = ttk.Combobox(mailbox_select_frame, textvariable=self.mailbox_var)
+        self.mailbox_combo.pack(side=tk.LEFT, padx=5, fill=tk.X, expand=True)
+        
+        refresh_button = ttk.Button(
+            mailbox_select_frame, 
+            text="Refresh",
+            command=self.load_local_addresses
+        )
+        refresh_button.pack(side=tk.LEFT, padx=5)
+        
+        view_button = ttk.Button(
+            mailbox_select_frame, 
+            text="View Emails",
+            command=self.view_mailbox
+        )
+        view_button.pack(side=tk.LEFT)
+        
+        # Email list frame
+        email_list_frame = ttk.LabelFrame(parent, text="Emails")
+        email_list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        
+        # Create a treeview for emails
+        columns = ("id", "from", "subject", "date")
+        self.email_tree = ttk.Treeview(email_list_frame, columns=columns, show="headings")
+        
+        # Configure columns
+        self.email_tree.heading("id", text="#")
+        self.email_tree.heading("from", text="From")
+        self.email_tree.heading("subject", text="Subject")
+        self.email_tree.heading("date", text="Date")
+        
+        self.email_tree.column("id", width=30, anchor=tk.CENTER)
+        self.email_tree.column("from", width=150)
+        self.email_tree.column("subject", width=250)
+        self.email_tree.column("date", width=150)
+        
+        # Add a scrollbar
+        scrollbar = ttk.Scrollbar(email_list_frame, orient=tk.VERTICAL, command=self.email_tree.yview)
+        self.email_tree.configure(yscroll=scrollbar.set)
+        
+        # Pack the treeview and scrollbar
+        self.email_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        # Bind double-click event to view email
+        self.email_tree.bind("<Double-1>", self.view_selected_email)
+        
+        # Email view frame
+        email_view_frame = ttk.LabelFrame(parent, text="Email Content")
+        email_view_frame.pack(fill=tk.BOTH, expand=True)
+        
+        self.email_content = scrolledtext.ScrolledText(
+            email_view_frame, 
+            wrap=tk.WORD,
+            height=10,
+            state="disabled"
+        )
+        self.email_content.pack(fill=tk.BOTH, expand=True)
+    
+    def load_local_addresses(self):
+        """Load all email addresses with local mailboxes"""
+        self.status_var.set("Loading mailboxes...")
+        
+        addresses = []
+        
+        if os.path.exists(self.mailbox_dir):
+            mailboxes = [d for d in os.listdir(self.mailbox_dir) 
+                         if os.path.isdir(os.path.join(self.mailbox_dir, d))]
+            
+            for mailbox in mailboxes:
+                email = mailbox.replace('_at_', '@').replace('_dot_', '.')
+                addresses.append(email)
+        
+        # Update the combobox
+        self.mailbox_combo['values'] = addresses
+        
+        # Set default value if available
+        if addresses:
+            self.mailbox_combo.current(0)
+        
+        self.status_var.set(f"Found {len(addresses)} mailboxes")
+    
+    def view_mailbox(self):
+        """View emails in the selected mailbox"""
+        mailbox = self.mailbox_var.get()
+        
+        if not mailbox:
+            messagebox.showwarning("Error", "Please select a mailbox")
+            return
+        
+        self.status_var.set(f"Loading emails for {mailbox}...")
+        
+        # Clear the treeview
+        for item in self.email_tree.get_children():
+            self.email_tree.delete(item)
+        
+        # Clear the email content
+        self.email_content.config(state="normal")
+        self.email_content.delete(1.0, tk.END)
+        self.email_content.config(state="disabled")
+        
+        # Get emails from the mailbox
+        user_dir = mailbox.replace('@', '_at_').replace('.', '_dot_')
+        mailbox_path = os.path.join(self.mailbox_dir, user_dir)
+        
+        if not os.path.exists(mailbox_path):
+            self.status_var.set(f"No mailbox found for {mailbox}")
+            return
+        
+        # Get all .eml files
+        import glob
+        import email
+        from email.policy import default
+        
+        email_files = sorted(glob.glob(os.path.join(mailbox_path, "*.eml")))
+        
+        if not email_files:
+            self.status_var.set(f"No emails found in mailbox for {mailbox}")
+            return
+        
+        # Add emails to the treeview
+        for i, email_file in enumerate(email_files, 1):
+            with open(email_file, 'rb') as f:
+                msg = email.message_from_binary_file(f, policy=default)
+                sender = msg.get("From", "Unknown")
+                subject = msg.get("Subject", "No Subject")
+                date = msg.get("Date", "Unknown Date")
+                
+                self.email_tree.insert("", "end", values=(i, sender, subject, date), tags=(email_file,))
+        
+        self.status_var.set(f"Loaded {len(email_files)} emails for {mailbox}")
+    
+    def view_selected_email(self, event):
+        """View the selected email"""
+        selection = self.email_tree.selection()
+        
+        if not selection:
+            return
+        
+        # Get the email file path from the item tags
+        item = selection[0]
+        email_file = self.email_tree.item(item, "tags")[0]
+        
+        # Read the email
+        import email
+        from email.policy import default
+        
+        with open(email_file, 'rb') as f:
+            msg = email.message_from_binary_file(f, policy=default)
+            
+            # Clear the content area
+            self.email_content.config(state="normal")
+            self.email_content.delete(1.0, tk.END)
+            
+            # Add email headers
+            self.email_content.insert(tk.END, f"From: {msg.get('From', 'Unknown')}\n")
+            self.email_content.insert(tk.END, f"To: {msg.get('To', 'Unknown')}\n")
+            self.email_content.insert(tk.END, f"Subject: {msg.get('Subject', 'No Subject')}\n")
+            self.email_content.insert(tk.END, f"Date: {msg.get('Date', 'Unknown Date')}\n")
+            self.email_content.insert(tk.END, "-" * 60 + "\n")
+            
+            # Add email body
+            for part in msg.walk():
+                content_type = part.get_content_type()
+                content_disposition = str(part.get("Content-Disposition"))
+                
+                # Skip attachments
+                if "attachment" in content_disposition:
+                    self.email_content.insert(tk.END, f"[Attachment: {part.get_filename()}]\n")
+                    continue
+                
+                if content_type == "text/plain":
+                    self.email_content.insert(tk.END, part.get_content())
+            
+            self.email_content.config(state="disabled")
+    
+    def check_sender(self, *args):
+        """Check if sender email is valid"""
+        email = self.sender_var.get()
+        
+        if not email:
+            self.sender_status.config(text="")
+            return
+        
+        if self.is_valid_email(email):
+            self.sender_status.config(text="Valid", foreground=self.success_color)
+        else:
+            self.sender_status.config(text="Invalid format", foreground=self.error_color)
+    
+    def check_recipient(self, *args):
+        """Check if recipient email is valid and has a mailbox"""
+        email = self.recipient_var.get()
+        
+        if not email:
+            self.recipient_status.config(text="")
+            return
+        
+        if not self.is_valid_email(email):
+            self.recipient_status.config(text="Invalid format", foreground=self.error_color)
+            return
+        
+        if self.email_exists_locally(email):
+            self.recipient_status.config(text="Local mailbox exists", foreground=self.success_color)
+        else:
+            self.recipient_status.config(text="No local mailbox", foreground=self.warning_color)
+    
+    def is_valid_email(self, email):
+        """Check if email has valid format"""
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+    
+    def email_exists_locally(self, email):
+        """Check if an email address has a mailbox in the system"""
+        if not self.is_valid_email(email):
+            return False
+            
+        user = email.replace('@', '_at_').replace('.', '_dot_')
+        mailbox_path = os.path.join(self.mailbox_dir, user)
+        return os.path.exists(mailbox_path)
+    
+    def clear_compose_form(self):
+        """Clear the compose form"""
+        self.sender_var.set("")
+        self.recipient_var.set("")
+        self.subject_var.set("")
+        self.body_text.delete(1.0, tk.END)
+    
+    def send_email(self):
+        """Send an email via SMTP with address verification"""
+        # Get form values
+        sender = self.sender_var.get()
+        recipient = self.recipient_var.get()
+        subject = self.subject_var.get()
+        body = self.body_text.get(1.0, tk.END).strip()
+        
+        # Validate form
+        if not sender:
+            messagebox.showerror("Error", "Sender email is required")
+            return
+        
+        if not recipient:
+            messagebox.showerror("Error", "Recipient email is required")
+            return
+        
+        if not subject:
+            subject = "(No Subject)"
+        
+        # Verify sender email format
+        if not self.is_valid_email(sender):
+            messagebox.showerror("Error", f"Invalid sender email format: {sender}")
+            return
+        
+        # Verify recipient email format
+        if not self.is_valid_email(recipient):
+            messagebox.showerror("Error", f"Invalid recipient email format: {recipient}")
+            return
+        
+        # Check if recipient has a local mailbox
+        if not self.email_exists_locally(recipient):
+            if not messagebox.askyesno("Warning", 
+                f"{recipient} doesn't have a local mailbox. Messages might not be delivered.\n\nDo you want to continue?"):
+                return
+        
+        # Create the email
+        message = MIMEMultipart()
+        message["From"] = sender
+        message["To"] = recipient
+        message["Subject"] = subject
+        
+        # Add body to email
+        message.attach(MIMEText(body, "plain"))
+        
+        try:
+            self.status_var.set(f"Connecting to SMTP server at {self.smtp_host}:{self.smtp_port}...")
+            self.root.update_idletasks()
+            
+            # Connect to the SMTP server
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                # Send the email
+                server.sendmail(sender, recipient, message.as_string())
+                
+                # Check if recipient has a local mailbox
+                if self.email_exists_locally(recipient):
+                    self.status_var.set(f"Email sent successfully to {recipient} (local mailbox exists)")
+                else:
+                    self.status_var.set(f"Email sent successfully to {recipient} (no local mailbox - message might be lost)")
+                
+                messagebox.showinfo("Success", "Email sent successfully!")
+                
+                # Clear the form after successful send
+                self.clear_compose_form()
+                
+        except Exception as e:
+            self.status_var.set(f"Error sending email: {e}")
+            messagebox.showerror("Error", f"Error sending email: {e}")
+
+def main():
+    root = tk.Tk()
+    app = MailClientGUI(root)
+    root.mainloop()
+
+if __name__ == "__main__":
+    main() 

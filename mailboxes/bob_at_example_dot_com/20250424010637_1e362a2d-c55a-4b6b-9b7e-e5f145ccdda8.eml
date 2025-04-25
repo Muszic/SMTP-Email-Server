@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============1435420177798180842=="
+MIME-Version: 1.0
+From: alice@example.com
+To: bob@example.com
+Subject: cg
+
+--===============1435420177798180842==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+meri bhi 7 ha bro
+--===============1435420177798180842==--

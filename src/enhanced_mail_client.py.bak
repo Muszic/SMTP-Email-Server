@@ -1,0 +1,211 @@
+#!/usr/bin/env python3
+import smtplib
+import os
+import sys
+import argparse
+import re
+import glob
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+class EnhancedMailClient:
+    """Enhanced mail client with address verification and interactive composition"""
+    def __init__(self, smtp_host="127.0.0.1", smtp_port=1025, mailbox_dir="mailboxes"):
+        self.smtp_host = smtp_host
+        self.smtp_port = smtp_port
+        self.mailbox_dir = mailbox_dir
+    
+    def is_valid_email(self, email):
+        """Check if email has valid format"""
+        pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+        return re.match(pattern, email) is not None
+    
+    def email_exists_locally(self, email):
+        """Check if an email address has a mailbox in the system"""
+        if not self.is_valid_email(email):
+            return False
+            
+        user = email.replace('@', '_at_').replace('.', '_dot_')
+        mailbox_path = os.path.join(self.mailbox_dir, user)
+        return os.path.exists(mailbox_path)
+    
+    def list_local_addresses(self):
+        """List all email addresses with local mailboxes"""
+        if not os.path.exists(self.mailbox_dir):
+            print("No mailboxes found.")
+            return []
+        
+        mailboxes = [d for d in os.listdir(self.mailbox_dir) 
+                     if os.path.isdir(os.path.join(self.mailbox_dir, d))]
+        
+        addresses = []
+        for mailbox in mailboxes:
+            email = mailbox.replace('_at_', '@').replace('_dot_', '.')
+            addresses.append(email)
+            
+        return addresses
+    
+    def create_email(self, sender, recipient, subject, body):
+        """Create an email message"""
+        message = MIMEMultipart()
+        message["From"] = sender
+        message["To"] = recipient
+        message["Subject"] = subject
+        
+        # Add body to email
+        message.attach(MIMEText(body, "plain"))
+        return message
+    
+    def send_email(self, sender, recipient, subject, body):
+        """Send an email via SMTP with address verification"""
+        # Verify sender email format
+        if not self.is_valid_email(sender):
+            print(f"Error: Invalid sender email format: {sender}")
+            return False
+        
+        # Verify recipient email format
+        if not self.is_valid_email(recipient):
+            print(f"Error: Invalid recipient email format: {recipient}")
+            return False
+        
+        # Create the email
+        message = self.create_email(sender, recipient, subject, body)
+        
+        try:
+            # Connect to the SMTP server
+            with smtplib.SMTP(self.smtp_host, self.smtp_port) as server:
+                print(f"Connected to SMTP server at {self.smtp_host}:{self.smtp_port}")
+                
+                # Send the email
+                server.sendmail(sender, recipient, message.as_string())
+                
+                # Check if recipient has a local mailbox
+                if self.email_exists_locally(recipient):
+                    print(f"Email sent successfully to {recipient} (local mailbox exists)")
+                else:
+                    print(f"Email sent successfully to {recipient} (no local mailbox - message might be lost)")
+                
+                return True
+                
+        except Exception as e:
+            print(f"Error sending email: {e}")
+            return False
+    
+    def interactive_compose(self):
+        """Interactive email composition with address verification"""
+        print("=== Interactive Email Composition ===")
+        
+        # List available local addresses
+        local_addresses = self.list_local_addresses()
+        if local_addresses:
+            print("\nLocal addresses that can receive mail:")
+            for addr in local_addresses:
+                print(f"- {addr}")
+        
+        # Get sender information
+        while True:
+            sender = input("\nFrom: ")
+            if self.is_valid_email(sender):
+                break
+            print("Invalid email format. Please try again.")
+        
+        # Get recipient information
+        while True:
+            recipient = input("To: ")
+            if self.is_valid_email(recipient):
+                if not self.email_exists_locally(recipient):
+                    confirm = input(f"Warning: {recipient} doesn't have a local mailbox. Messages might not be delivered. Continue? (y/n): ")
+                    if confirm.lower() != 'y':
+                        continue
+                break
+            print("Invalid email format. Please try again.")
+        
+        # Get email subject
+        subject = input("Subject: ")
+        
+        # Get email body
+        print("\nEnter email body (type '.' on a line by itself to finish):")
+        body_lines = []
+        while True:
+            line = input()
+            if line == '.':
+                break
+            body_lines.append(line)
+        
+        body = '\n'.join(body_lines)
+        
+        # Confirm and send
+        print("\n=== Email Preview ===")
+        print(f"From: {sender}")
+        print(f"To: {recipient}")
+        print(f"Subject: {subject}")
+        print(f"\n{body}\n")
+        
+        confirm = input("Send this email? (y/n): ")
+        if confirm.lower() == 'y':
+            return self.send_email(sender, recipient, subject, body)
+        else:
+            print("Email sending cancelled.")
+            return False
+
+def main():
+    """Main function for the enhanced mail client"""
+    parser = argparse.ArgumentParser(description="Enhanced Email Client with Address Verification")
+    parser.add_argument("--interactive", action="store_true", help="Use interactive email composition")
+    parser.add_argument("--from", dest="sender", help="Sender email address")
+    parser.add_argument("--to", dest="recipient", help="Recipient email address")
+    parser.add_argument("--subject", help="Email subject", default="Test Email")
+    parser.add_argument("--body", help="Email body content")
+    parser.add_argument("--host", help="SMTP server host", default=os.getenv("SMTP_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, help="SMTP server port", default=int(os.getenv("SMTP_PORT", "1025")))
+    parser.add_argument("--list-addresses", action="store_true", help="List all email addresses with local mailboxes")
+    
+    args = parser.parse_args()
+    
+    # Create the mail client
+    client = EnhancedMailClient(
+        smtp_host=args.host,
+        smtp_port=args.port
+    )
+    
+    # List addresses if requested
+    if args.list_addresses:
+        addresses = client.list_local_addresses()
+        if addresses:
+            print("Email addresses with local mailboxes:")
+            for addr in addresses:
+                print(f"- {addr}")
+        return
+        
+    # Use interactive mode if specified
+    if args.interactive:
+        client.interactive_compose()
+        return
+    
+    # Otherwise use command line arguments
+    if not args.sender or not args.recipient:
+        print("Error: --from and --to are required unless using --interactive mode")
+        parser.print_help()
+        return
+    
+    if not args.body:
+        print("Enter email body (type '.' on a line by itself to finish):")
+        body_lines = []
+        while True:
+            line = input()
+            if line == '.':
+                break
+            body_lines.append(line)
+        body = '\n'.join(body_lines)
+    else:
+        body = args.body
+    
+    # Send the email
+    client.send_email(args.sender, args.recipient, args.subject, body)
+
+if __name__ == "__main__":
+    main() 

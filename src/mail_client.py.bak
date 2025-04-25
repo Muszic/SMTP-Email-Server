@@ -1,0 +1,63 @@
+#!/usr/bin/env python3
+import smtplib
+import os
+import sys
+import argparse
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
+
+def create_email(sender, recipient, subject, body):
+    """Create an email message"""
+    message = MIMEMultipart()
+    message["From"] = sender
+    message["To"] = recipient
+    message["Subject"] = subject
+    
+    # Add body to email
+    message.attach(MIMEText(body, "plain"))
+    return message
+
+def send_email(sender, recipient, subject, body, smtp_host, smtp_port):
+    """Send an email via SMTP"""
+    message = create_email(sender, recipient, subject, body)
+    
+    try:
+        # Connect to the SMTP server
+        with smtplib.SMTP(smtp_host, smtp_port) as server:
+            print(f"Connected to SMTP server at {smtp_host}:{smtp_port}")
+            
+            # Send the email
+            server.sendmail(sender, recipient, message.as_string())
+            print(f"Email sent successfully to {recipient}")
+            
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        sys.exit(1)
+
+def main():
+    parser = argparse.ArgumentParser(description="Send an email via SMTP")
+    parser.add_argument("--from", dest="sender", help="Sender email address", required=True)
+    parser.add_argument("--to", dest="recipient", help="Recipient email address", required=True)
+    parser.add_argument("--subject", help="Email subject", default="Test Email")
+    parser.add_argument("--body", help="Email body content", default="This is a test email sent from Python.")
+    parser.add_argument("--host", help="SMTP server host", default=os.getenv("SMTP_HOST", "127.0.0.1"))
+    parser.add_argument("--port", type=int, help="SMTP server port", default=int(os.getenv("SMTP_PORT", "1025")))
+    
+    args = parser.parse_args()
+    
+    # Send the email
+    send_email(
+        args.sender,
+        args.recipient,
+        args.subject,
+        args.body,
+        args.host,
+        args.port
+    )
+
+if __name__ == "__main__":
+    main() 

@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============8871118941469675630=="
+MIME-Version: 1.0
+From: bob@example.com
+To: alice@example.com
+Subject: cg
+
+--===============8871118941469675630==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+cg toh gyi bhai
+--===============8871118941469675630==--

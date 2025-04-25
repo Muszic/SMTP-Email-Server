@@ -1,0 +1,60 @@
+2025-04-23 20:49:57,822 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-23 20:49:57,824 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-23 20:51:04,683 - smtp_server - INFO - Receiving message from: sender@example.com to: ['recipient@example.com']
+2025-04-23 20:51:04,686 - smtp_server - INFO - Message subject: Hello
+2025-04-23 20:51:04,686 - smtp_server - INFO - Stored email for recipient@example.com with ID dc39e42c-ede0-4255-a0d9-8423388d491e
+2025-04-23 21:13:01,895 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-23 23:36:25,200 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-23 23:37:32,393 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-23 23:37:32,394 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-23 23:38:44,910 - smtp_server - INFO - SMTP Server shutting down
+2025-04-23 23:40:23,067 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-23 23:40:23,068 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-23 23:41:20,883 - smtp_server - INFO - Receiving message from: sender@example.com to: ['recipient@example.com']
+2025-04-23 23:41:20,887 - smtp_server - INFO - Message subject: Test Email
+2025-04-23 23:41:20,887 - smtp_server - INFO - Stored email for recipient@example.com with ID 6ab43873-2643-4b45-b1b3-6071b30b95f6
+2025-04-24 00:03:16,521 - smtp_server - INFO - Receiving message from: user1@example.com to: ['user2@example.com']
+2025-04-24 00:03:16,523 - smtp_server - INFO - Message subject: Test Email
+2025-04-24 00:03:16,523 - smtp_server - INFO - Stored email for user2@example.com with ID b35f9b6e-0e24-4435-8530-e286b28863ba
+2025-04-24 00:09:49,784 - smtp_server - INFO - Receiving message from: sender@example.com to: ['recipient@example.com']
+2025-04-24 00:09:49,786 - smtp_server - INFO - Message subject: Test Email for GUI Demo
+2025-04-24 00:09:49,786 - smtp_server - INFO - Stored email for recipient@example.com with ID 93465e6b-89c7-4619-9d2e-720684810ada
+2025-04-24 00:16:23,390 - smtp_server - INFO - Receiving message from: sender@example.com to: ['recipient@example.com']
+2025-04-24 00:16:23,393 - smtp_server - INFO - Message subject: love
+2025-04-24 00:16:23,394 - smtp_server - INFO - Stored email for recipient@example.com with ID 67674acf-27f5-40e1-a526-889eee8a777e
+2025-04-24 00:28:47,051 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 00:28:47,052 - smtp_server - INFO - Message subject: Test Email from Alice to Bob
+2025-04-24 00:28:47,052 - smtp_server - INFO - Stored email for bob@example.com with ID b75e36e1-8711-4786-971e-1cea3528c9e3
+2025-04-24 01:05:21,471 - smtp_server - INFO - Receiving message from: bob@example.com to: ['alice@example.com']
+2025-04-24 01:05:21,474 - smtp_server - INFO - Message subject: cg
+2025-04-24 01:05:21,475 - smtp_server - INFO - Stored email for alice@example.com with ID 5963d067-2617-4255-a7c0-a93435879f21
+2025-04-24 01:06:37,693 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 01:06:37,697 - smtp_server - INFO - Message subject: cg
+2025-04-24 01:06:37,697 - smtp_server - INFO - Stored email for bob@example.com with ID 1e362a2d-c55a-4b6b-9b7e-e5f145ccdda8
+2025-04-24 12:03:20,672 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-24 12:04:00,997 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 12:04:00,999 - smtp_server - INFO - Message subject: Test Email from Alice to Bob
+2025-04-24 12:04:00,999 - smtp_server - INFO - Stored email for bob@example.com with ID 4f3126cd-9025-4934-8e57-cd5340c76f06
+2025-04-24 12:07:07,481 - smtp_server - INFO - Receiving message from: bob@example.com to: ['alice@example.com']
+2025-04-24 12:07:07,484 - smtp_server - INFO - Message subject: hloooooooooo
+2025-04-24 12:07:07,484 - smtp_server - INFO - Stored email for alice@example.com with ID abad8331-75fc-46e3-8e83-e4dc3059f975
+2025-04-24 12:16:44,420 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 12:16:44,423 - smtp_server - INFO - Message subject: Test Email from Alice to Bob
+2025-04-24 12:16:44,423 - smtp_server - INFO - Stored email for bob@example.com with ID d8d5dfe4-0fee-41d3-8396-f4a911e7455d
+2025-04-24 12:18:05,773 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 12:18:05,777 - smtp_server - INFO - Message subject: hjcbckdsjc
+2025-04-24 12:18:05,777 - smtp_server - INFO - Stored email for bob@example.com with ID 107985a0-b3b3-4076-bfe4-c3f995ac58ad
+2025-04-24 21:35:50,719 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-24 21:35:50,720 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-24 21:38:05,701 - smtp_server - INFO - Receiving message from: alice@example.com to: ['bob@example.com']
+2025-04-24 21:38:05,704 - smtp_server - INFO - Message subject: agrim
+2025-04-24 21:38:05,705 - smtp_server - INFO - Stored email for bob@example.com with ID 456c8c51-327a-4d8e-a5b9-405b994c59a7
+2025-04-25 01:23:32,184 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-25 01:23:32,185 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-25 01:47:46,430 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-25 01:47:46,431 - smtp_server - INFO - SMTP Server started on 127.0.0.1:1025
+2025-04-25 01:51:26,216 - smtp_server - INFO - Starting SMTP server on 127.0.0.1:1025
+2025-04-25 01:53:16,652 - smtp_server - INFO - Receiving message from: prabhkirat@example.com to: ['alice@example.com']
+2025-04-25 01:53:16,655 - smtp_server - INFO - Message subject: haat chutiye
+2025-04-25 01:53:16,660 - smtp_server - INFO - Stored email for alice@example.com with ID fdcf1515-da4f-4a37-b15e-1dc501d1bee4
+2025-04-25 01:54:06,906 - smtp_server - INFO - SMTP Server shutting down

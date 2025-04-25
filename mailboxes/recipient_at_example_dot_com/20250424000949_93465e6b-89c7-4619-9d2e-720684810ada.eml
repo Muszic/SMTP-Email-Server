@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============8497523777462684920=="
+MIME-Version: 1.0
+From: sender@example.com
+To: recipient@example.com
+Subject: Test Email for GUI Demo
+
+--===============8497523777462684920==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+This is a test email that we'll view in the GUI mail client.
+--===============8497523777462684920==--

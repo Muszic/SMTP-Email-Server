@@ -1,0 +1,14 @@
+{"timestamp": "2025-04-23T20:51:04.686853", "from": "sender@example.com", "to": ["recipient@example.com"], "subject": "Hello", "size": 360, "peer": "127.0.0.1:50914"}
+{"timestamp": "2025-04-23T23:41:20.887584", "from": "sender@example.com", "to": ["recipient@example.com"], "subject": "Test Email", "size": 365, "peer": "127.0.0.1:38740"}
+{"timestamp": "2025-04-24T00:03:16.523999", "from": "user1@example.com", "to": ["user2@example.com"], "subject": "Test Email", "size": 387, "peer": "127.0.0.1:44720"}
+{"timestamp": "2025-04-24T00:09:49.786407", "from": "sender@example.com", "to": ["recipient@example.com"], "subject": "Test Email for GUI Demo", "size": 418, "peer": "127.0.0.1:53044"}
+{"timestamp": "2025-04-24T00:16:23.394367", "from": "sender@example.com", "to": ["recipient@example.com"], "subject": "love", "size": 360, "peer": "127.0.0.1:41610"}
+{"timestamp": "2025-04-24T00:28:47.052921", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "Test Email from Alice to Bob", "size": 516, "peer": "127.0.0.1:52256"}
+{"timestamp": "2025-04-24T01:05:21.475127", "from": "bob@example.com", "to": ["alice@example.com"], "subject": "cg", "size": 345, "peer": "127.0.0.1:60906"}
+{"timestamp": "2025-04-24T01:06:37.697826", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "cg", "size": 347, "peer": "127.0.0.1:50520"}
+{"timestamp": "2025-04-24T12:04:00.999317", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "Test Email from Alice to Bob", "size": 516, "peer": "127.0.0.1:51602"}
+{"timestamp": "2025-04-24T12:07:07.484816", "from": "bob@example.com", "to": ["alice@example.com"], "subject": "hloooooooooo", "size": 373, "peer": "127.0.0.1:54496"}
+{"timestamp": "2025-04-24T12:16:44.423756", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "Test Email from Alice to Bob", "size": 554, "peer": "127.0.0.1:42264"}
+{"timestamp": "2025-04-24T12:18:05.777572", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "hjcbckdsjc", "size": 398, "peer": "127.0.0.1:46742"}
+{"timestamp": "2025-04-24T21:38:05.705204", "from": "alice@example.com", "to": ["bob@example.com"], "subject": "agrim", "size": 380, "peer": "127.0.0.1:48754"}
+{"timestamp": "2025-04-25T01:53:16.660509", "from": "prabhkirat@example.com", "to": ["alice@example.com"], "subject": "haat chutiye", "size": 390, "peer": "127.0.0.1:39686"}

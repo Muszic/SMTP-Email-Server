@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============3714707771891382466=="
+MIME-Version: 1.0
+From: sender@example.com
+To: recipient@example.com
+Subject: love
+
+--===============3714707771891382466==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+pyaar chutiya hota ha
+--===============3714707771891382466==--

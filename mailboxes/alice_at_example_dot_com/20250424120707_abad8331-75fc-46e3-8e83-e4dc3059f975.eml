@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============8139145510605583620=="
+MIME-Version: 1.0
+From: bob@example.com
+To: alice@example.com
+Subject: hloooooooooo
+
+--===============8139145510605583620==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+what you doing broooooooooooooooo
+--===============8139145510605583620==--

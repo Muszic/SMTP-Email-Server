@@ -1,0 +1,13 @@
+Content-Type: multipart/mixed; boundary="===============8403342888865139284=="
+MIME-Version: 1.0
+From: user1@example.com
+To: user2@example.com
+Subject: Test Email
+
+--===============8403342888865139284==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+This is a test email with address verification.
+--===============8403342888865139284==--
