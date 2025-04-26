@@ -10,6 +10,7 @@ from email.policy import default
 import logging
 import json
 from dotenv import load_dotenv
+from email_db import EmailDatabase  # Import the EmailDatabase class
 
 # Load environment variables
 load_dotenv()
@@ -28,6 +29,8 @@ class MailboxManager:
     def __init__(self, mailbox_dir='mailboxes'):
         self.mailbox_dir = mailbox_dir
         os.makedirs(self.mailbox_dir, exist_ok=True)
+        # Initialize the email database
+        self.email_db = EmailDatabase()
     
     def get_user_mailbox_path(self, user_email):
         """Get path to a user's mailbox directory"""
@@ -38,9 +41,16 @@ class MailboxManager:
         return user_dir
     
     def store_email(self, recipient, message_data):
-        """Store an email in a recipient's mailbox"""
+        """Store an email in a recipient's mailbox and database"""
+        # Store in the database
+        message_id = self.email_db.store_email(recipient, message_data)
+        
+        # Also keep the file-based storage for backward compatibility
         mailbox_path = self.get_user_mailbox_path(recipient)
-        message_id = str(uuid.uuid4())
+        
+        if not message_id:
+            # If database storage failed, generate a new ID
+            message_id = str(uuid.uuid4())
         
         # Store the email with a unique ID and timestamp
         timestamp = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -98,6 +108,7 @@ def main():
     # Create directories
     os.makedirs('logs', exist_ok=True)
     os.makedirs('mailboxes', exist_ok=True)
+    os.makedirs('database', exist_ok=True)  # Create database directory
     
     # Get configuration
     host = os.getenv('SMTP_HOST', '127.0.0.1')

@@ -1,2 +1,4 @@
 secure-smtpd==3.0.0
-python-dotenv==1.0.0 
+python-dotenv==1.0.0
+# Added for database support
+sqlite3-dbm==1.0.0 

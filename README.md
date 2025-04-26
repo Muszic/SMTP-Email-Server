@@ -10,6 +10,8 @@ A simple SMTP email server implementation that handles the email sending and rec
 - User authentication system with registration and login
 - Personal mailbox access for registered users
 - Email sending and reading with a modern graphical interface
+- **SQLite database storage for emails** with backward compatibility for file-based storage
+- **Email deletion functionality** for managing inbox contents
 
 ## Components
 
@@ -73,6 +75,12 @@ Features:
 
 Or register your own account using the registration tab.
 
+**Deleting Emails:**
+1. Select an email in your inbox by clicking on it
+2. Click the "Delete Selected Email" button
+3. Confirm the deletion when prompted
+4. The email will be permanently removed from both the database and the interface
+
 ### Reading Emails (Command-line)
 
 List all mailboxes:
@@ -88,6 +96,16 @@ python3 src/mail_reader.py --mailbox user@example.com
 Read a specific email:
 ```bash
 python3 src/mail_reader.py --mailbox user@example.com --read 1
+```
+
+Use database storage instead of file system:
+```bash
+python3 src/mail_reader.py --mailbox user@example.com --use-db
+```
+
+Read a specific email by ID (database only):
+```bash
+python3 src/mail_reader.py --mailbox user@example.com --id email_id_here --use-db
 ```
 
 ### Testing the System
@@ -122,7 +140,8 @@ The project contains the following files:
 ├── src/                        # Source code directory
 ├── logs/                       # Server logs
 ├── users/                      # User accounts data
-├── mailboxes/                  # Stored emails
+├── mailboxes/                  # Stored emails (legacy format)
+├── database/                   # Email database storage
 └── config/                     # Configuration files
 ```
 
@@ -155,7 +174,8 @@ For daily use, follow these steps:
 ### Data Storage
 
 - User accounts are stored in JSON format in the users directory
-- Emails are stored as .eml files in user-specific mailbox directories
+- Emails are stored in a SQLite database in the database directory
+- For backward compatibility, emails are also stored as .eml files in user-specific mailbox directories
 - Mailbox names are derived from email addresses with special characters replaced
 
 ### User Interface
@@ -164,6 +184,16 @@ For daily use, follow these steps:
 - Tabbed interface for easy navigation between composing and reading emails
 - Real-time validation of email addresses with visual feedback
 - Status bar for operation feedback
+- Email deletion with confirmation dialog to prevent accidental deletions
+
+### Database Storage
+
+- Emails are stored in a SQLite database for improved searchability and performance
+- Database functionality is implemented in the `email_db.py` module
+- The system provides backward compatibility with the file-based storage system
+- Email read status tracking is available in database mode
+- Search functionality allows finding emails by content or subject
+- Emails can be permanently deleted from both the database and file system
 
 ## Troubleshooting
 
@@ -185,6 +215,7 @@ If you see errors related to the `status_var` attribute, make sure it's properly
 3. **Message Transfer**: The SMTP server processes the incoming email
 4. **Message Delivery**: The email is stored in the recipient's mailbox
 5. **Email Access**: Users can view their emails through the mail client interface
+6. **Email Management**: Users can search, read, and delete emails from their mailbox
 
 ## Future Improvements
 
@@ -195,6 +226,11 @@ Potential improvements for this system include:
 - Rich text (HTML) email composition
 - Contact management system
 - Improved security with SSL/TLS support
+- Full migration to database storage with file storage removal
+- Database backup and restore functionality
+- Bulk email deletion for multiple selected emails
+- Email archiving functionality as an alternative to deletion
+- Trash folder with delayed permanent deletion
 
 ## License
 

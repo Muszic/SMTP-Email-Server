@@ -10,6 +10,9 @@ from dotenv import load_dotenv
 from user_auth import UserAuth
 from email.utils import formatdate, parsedate_to_datetime
 import datetime
+import json
+import uuid
+from email_db import EmailDatabase  # Import the EmailDatabase class
 
 # Load environment variables
 load_dotenv()
@@ -282,6 +285,9 @@ class MailClientApp(tk.Tk):
         self.status_var = tk.StringVar()
         self.status_var.set("Ready")
         
+        # Initialize the email database
+        self.email_db = EmailDatabase()
+        
         # Show login/register view
         self.show_login_view()
     
@@ -441,24 +447,60 @@ class MailClientApp(tk.Tk):
     
     def setup_mailbox_tab(self, parent):
         """Set up the mailbox tab for viewing user's inbox"""
-        # View emails button
-        view_frame = ttk.Frame(parent)
-        view_frame.pack(fill=tk.X, pady=(0, 10))
+        mailbox_frame = ttk.Frame(parent)
+        mailbox_frame.pack(fill=tk.BOTH, expand=True)
         
+        # Create top frame for refresh button and search
+        top_frame = ttk.Frame(mailbox_frame)
+        top_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Refresh button
         refresh_button = ttk.Button(
-            view_frame, 
-            text="Refresh Inbox",
+            top_frame,
+            text="Refresh",
             command=self.view_user_inbox
         )
-        refresh_button.pack(side=tk.LEFT)
+        refresh_button.pack(side=tk.LEFT, padx=(0, 10))
         
-        # Email list frame
-        email_list_frame = ttk.LabelFrame(parent, text="My Emails")
-        email_list_frame.pack(fill=tk.BOTH, expand=True, pady=(0, 10))
+        # Add search functionality
+        search_label = ttk.Label(top_frame, text="Search:")
+        search_label.pack(side=tk.LEFT, padx=(10, 5))
         
-        # Create a treeview for emails
-        columns = ("id", "from", "subject", "date")
-        self.email_tree = ttk.Treeview(email_list_frame, columns=columns, show="headings")
+        self.search_var = tk.StringVar()
+        search_entry = ttk.Entry(top_frame, textvariable=self.search_var, width=25)
+        search_entry.pack(side=tk.LEFT, padx=(0, 5))
+        
+        search_button = ttk.Button(
+            top_frame,
+            text="Search",
+            command=self.search_emails
+        )
+        search_button.pack(side=tk.LEFT)
+        
+        clear_search_button = ttk.Button(
+            top_frame,
+            text="Clear",
+            command=self.clear_search
+        )
+        clear_search_button.pack(side=tk.LEFT, padx=(5, 0))
+        
+        # Create a scrollable treeview for emails
+        treeview_frame = ttk.Frame(mailbox_frame)
+        treeview_frame.pack(fill=tk.X, pady=(0, 10))
+        
+        # Email list with scrollbars
+        tree_scroll_y = ttk.Scrollbar(treeview_frame)
+        tree_scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
+        
+        tree_scroll_x = ttk.Scrollbar(treeview_frame, orient=tk.HORIZONTAL)
+        tree_scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
+        
+        self.email_tree = ttk.Treeview(
+            treeview_frame,
+            columns=("id", "from", "subject", "date"),
+            show="headings",
+            height=10
+        )
         
         # Configure columns
         self.email_tree.heading("id", text="#")
@@ -466,24 +508,31 @@ class MailClientApp(tk.Tk):
         self.email_tree.heading("subject", text="Subject")
         self.email_tree.heading("date", text="Date")
         
-        self.email_tree.column("id", width=30, anchor=tk.CENTER)
-        self.email_tree.column("from", width=150)
-        self.email_tree.column("subject", width=250)
+        self.email_tree.column("id", width=50, stretch=False)
+        self.email_tree.column("from", width=200)
+        self.email_tree.column("subject", width=300)
         self.email_tree.column("date", width=150)
         
-        # Add a scrollbar
-        scrollbar = ttk.Scrollbar(email_list_frame, orient=tk.VERTICAL, command=self.email_tree.yview)
-        self.email_tree.configure(yscroll=scrollbar.set)
+        # Connect scrollbars
+        self.email_tree.configure(yscrollcommand=tree_scroll_y.set, xscrollcommand=tree_scroll_x.set)
+        tree_scroll_y.configure(command=self.email_tree.yview)
+        tree_scroll_x.configure(command=self.email_tree.xview)
         
-        # Pack the treeview and scrollbar
-        self.email_tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.email_tree.pack(fill=tk.BOTH, expand=True)
         
         # Bind double-click event to view email
         self.email_tree.bind("<Double-1>", self.view_selected_email)
         
+        # Add delete button below the treeview
+        delete_button = ttk.Button(
+            mailbox_frame,
+            text="Delete Selected Email",
+            command=self.delete_selected_email
+        )
+        delete_button.pack(anchor=tk.E, pady=(0, 10))
+        
         # Email view frame
-        email_view_frame = ttk.LabelFrame(parent, text="Email Content")
+        email_view_frame = ttk.LabelFrame(mailbox_frame, text="Email Content")
         email_view_frame.pack(fill=tk.BOTH, expand=True)
         
         self.email_content = scrolledtext.ScrolledText(
@@ -513,47 +562,83 @@ class MailClientApp(tk.Tk):
         self.email_content.delete(1.0, tk.END)
         self.email_content.config(state="disabled")
         
-        # Get emails from the user's mailbox
+        # Get user's email
         email = self.current_user['email']
-        user_dir = email.replace('@', '_at_').replace('.', '_dot_')
-        mailbox_path = os.path.join(self.mailbox_dir, user_dir)
         
-        if not os.path.exists(mailbox_path):
-            self.status_var.set(f"No mailbox found for {email}")
-            return
+        # Try to use database first, fall back to file system if needed
+        use_db = os.path.exists("database/emails.db")
         
-        # Get all .eml files
-        import glob
-        import email
-        from email.policy import default
-        
-        email_files = sorted(glob.glob(os.path.join(mailbox_path, "*.eml")))
-        
-        if not email_files:
-            self.status_var.set(f"No emails found in mailbox for {email}")
-            return
-        
-        # Add emails to the treeview
-        for i, email_file in enumerate(email_files, 1):
-            with open(email_file, 'rb') as f:
-                msg = email.message_from_binary_file(f, policy=default)
-                sender = msg.get("From", "Unknown")
-                subject = msg.get("Subject", "No Subject")
+        if use_db:
+            # Get emails from database
+            emails = self.email_db.get_mailbox(email)
+            
+            if not emails:
+                self.status_var.set(f"No emails found in mailbox for {email}")
+                return
+            
+            # Add emails to the treeview
+            for i, mail in enumerate(emails, 1):
+                sender = mail['sender']
+                subject = mail['subject']
+                date_str = mail['received_date']
                 
-                # Get date and format it nicely
-                date_str = msg.get("Date", "Unknown Date")
                 try:
-                    if date_str != 'Unknown Date':
-                        # Try to parse and format the date
-                        date_obj = parsedate_to_datetime(date_str)
-                        date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                    # Try to format the date nicely
+                    date_obj = datetime.fromisoformat(date_str)
+                    date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
                 except:
                     # If parsing fails, use the original date string
                     pass
                 
-                self.email_tree.insert("", "end", values=(i, sender, subject, date_str), tags=(email_file,))
-        
-        self.status_var.set(f"Loaded {len(email_files)} emails for {self.current_user['email']}")
+                # Insert with database ID as tag
+                self.email_tree.insert("", "end", values=(i, sender, subject, date_str), 
+                                      tags=(mail['id'], 'db'))
+            
+            self.status_var.set(f"Loaded {len(emails)} emails for {self.current_user['email']}")
+            
+        else:
+            # Fall back to file system
+            user_dir = email.replace('@', '_at_').replace('.', '_dot_')
+            mailbox_path = os.path.join(self.mailbox_dir, user_dir)
+            
+            if not os.path.exists(mailbox_path):
+                self.status_var.set(f"No mailbox found for {email}")
+                return
+            
+            # Get all .eml files
+            import glob
+            import email
+            from email.policy import default
+            
+            email_files = sorted(glob.glob(os.path.join(mailbox_path, "*.eml")))
+            
+            if not email_files:
+                self.status_var.set(f"No emails found in mailbox for {email}")
+                return
+            
+            # Add emails to the treeview
+            for i, email_file in enumerate(email_files, 1):
+                with open(email_file, 'rb') as f:
+                    msg = email.message_from_binary_file(f, policy=default)
+                    sender = msg.get("From", "Unknown")
+                    subject = msg.get("Subject", "No Subject")
+                    
+                    # Get date and format it nicely
+                    date_str = msg.get("Date", "Unknown Date")
+                    try:
+                        if date_str != 'Unknown Date':
+                            # Try to parse and format the date
+                            date_obj = parsedate_to_datetime(date_str)
+                            date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                    except:
+                        # If parsing fails, use the original date string
+                        pass
+                    
+                    # Tag with file path and 'file' tag
+                    self.email_tree.insert("", "end", values=(i, sender, subject, date_str), 
+                                          tags=(email_file, 'file'))
+            
+            self.status_var.set(f"Loaded {len(email_files)} emails for {self.current_user['email']}")
     
     def view_selected_email(self, event):
         """View the selected email"""
@@ -562,53 +647,101 @@ class MailClientApp(tk.Tk):
         if not selection:
             return
         
-        # Get the email file path from the item tags
+        # Get the item and its tags
         item = selection[0]
-        email_file = self.email_tree.item(item, "tags")[0]
+        tags = self.email_tree.item(item, "tags")
+        email_id = tags[0]
+        source_type = tags[1] if len(tags) > 1 else 'file'  # Default to file if not specified
         
-        # Read the email
-        import email
-        from email.policy import default
-        
-        with open(email_file, 'rb') as f:
-            msg = email.message_from_binary_file(f, policy=default)
+        if source_type == 'db':
+            # Read from database
+            mail_data = self.email_db.get_email(email_id)
             
-            # Clear the content area
+            if not mail_data:
+                self.status_var.set(f"Error: Email not found in database")
+                return
+                
+            # Mark as read
+            self.email_db.mark_as_read(email_id)
+            
+            # Clear content and add email details
             self.email_content.config(state="normal")
             self.email_content.delete(1.0, tk.END)
             
-            # Get date and format it nicely if possible
-            date_str = msg.get('Date', 'Unknown Date')
+            # Format date if possible
+            date_str = mail_data['received_date']
             try:
-                if date_str != 'Unknown Date':
-                    # Try to parse and format the date nicely
-                    date_obj = parsedate_to_datetime(date_str)
-                    date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                date_obj = datetime.fromisoformat(date_str)
+                date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
             except:
-                # If parsing fails, use the original date string
                 pass
-            
-            # Add email headers
-            self.email_content.insert(tk.END, f"From: {msg.get('From', 'Unknown')}\n")
-            self.email_content.insert(tk.END, f"To: {msg.get('To', 'Unknown')}\n")
-            self.email_content.insert(tk.END, f"Subject: {msg.get('Subject', 'No Subject')}\n")
+                
+            # Add headers
+            self.email_content.insert(tk.END, f"From: {mail_data['sender']}\n")
+            self.email_content.insert(tk.END, f"To: {mail_data['recipient']}\n")
+            self.email_content.insert(tk.END, f"Subject: {mail_data['subject']}\n")
             self.email_content.insert(tk.END, f"Date: {date_str}\n")
+            
+            # Add attachments if any
+            if mail_data['attachments']:
+                try:
+                    attachments = json.loads(mail_data['attachments'])
+                    if attachments:
+                        self.email_content.insert(tk.END, "Attachments: ")
+                        self.email_content.insert(tk.END, ", ".join(attachments) + "\n")
+                except:
+                    pass
+                    
             self.email_content.insert(tk.END, "-" * 60 + "\n")
             
-            # Add email body
-            for part in msg.walk():
-                content_type = part.get_content_type()
-                content_disposition = str(part.get("Content-Disposition"))
-                
-                # Skip attachments
-                if "attachment" in content_disposition:
-                    self.email_content.insert(tk.END, f"[Attachment: {part.get_filename()}]\n")
-                    continue
-                
-                if content_type == "text/plain":
-                    self.email_content.insert(tk.END, part.get_content())
+            # Add body
+            self.email_content.insert(tk.END, mail_data['body'])
             
-            self.email_content.config(state="disabled")
+        else:
+            # Read from file (existing implementation)
+            email_file = email_id
+            import email
+            from email.policy import default
+            
+            with open(email_file, 'rb') as f:
+                msg = email.message_from_binary_file(f, policy=default)
+                
+                # Clear the content area
+                self.email_content.config(state="normal")
+                self.email_content.delete(1.0, tk.END)
+                
+                # Get date and format it nicely if possible
+                date_str = msg.get('Date', 'Unknown Date')
+                try:
+                    if date_str != 'Unknown Date':
+                        # Try to parse and format the date nicely
+                        date_obj = parsedate_to_datetime(date_str)
+                        date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+                except:
+                    # If parsing fails, use the original date string
+                    pass
+                
+                # Add email headers
+                self.email_content.insert(tk.END, f"From: {msg.get('From', 'Unknown')}\n")
+                self.email_content.insert(tk.END, f"To: {msg.get('To', 'Unknown')}\n")
+                self.email_content.insert(tk.END, f"Subject: {msg.get('Subject', 'No Subject')}\n")
+                self.email_content.insert(tk.END, f"Date: {date_str}\n")
+                self.email_content.insert(tk.END, "-" * 60 + "\n")
+                
+                # Add email body
+                for part in msg.walk():
+                    content_type = part.get_content_type()
+                    content_disposition = str(part.get("Content-Disposition"))
+                    
+                    # Skip attachments
+                    if "attachment" in content_disposition:
+                        self.email_content.insert(tk.END, f"[Attachment: {part.get_filename()}]\n")
+                        continue
+                    
+                    if content_type == "text/plain":
+                        self.email_content.insert(tk.END, part.get_content())
+        
+        self.email_content.config(state="disabled")
     
     def check_recipient(self, *args):
         """Check if recipient email is valid and has a mailbox"""
@@ -636,7 +769,13 @@ class MailClientApp(tk.Tk):
         """Check if an email address has a mailbox in the system"""
         if not self.is_valid_email(email):
             return False
+        
+        # Check in database if available
+        if os.path.exists("database/emails.db"):
+            # Just verify email format, can't check if recipient exists in DB beforehand
+            return True
             
+        # Fallback to file system check
         user = email.replace('@', '_at_').replace('.', '_dot_')
         mailbox_path = os.path.join(self.mailbox_dir, user)
         return os.path.exists(mailbox_path)
@@ -720,6 +859,106 @@ class MailClientApp(tk.Tk):
         self.current_user = None
         self.show_login_view()
         
+    def search_emails(self):
+        """Search emails in the user's mailbox"""
+        if not self.current_user:
+            return
+        
+        # Get search query
+        query = self.search_var.get().strip()
+        if not query:
+            self.status_var.set("Please enter a search term")
+            return
+        
+        email_address = self.current_user['email']
+        self.status_var.set(f"Searching for '{query}' in {email_address}'s mailbox...")
+        
+        # Only database supports search
+        if not os.path.exists("database/emails.db"):
+            messagebox.showinfo("Search unavailable", 
+                "Search functionality requires database storage. Please run the migrate_to_db.py script first.")
+            return
+        
+        # Clear the treeview
+        for item in self.email_tree.get_children():
+            self.email_tree.delete(item)
+        
+        # Search emails in database
+        emails = self.email_db.search_emails(email_address, query)
+        
+        if not emails:
+            self.status_var.set(f"No emails found matching '{query}'")
+            return
+        
+        # Add search results to the treeview
+        for i, mail in enumerate(emails, 1):
+            sender = mail['sender']
+            subject = mail['subject']
+            date_str = mail['received_date']
+            
+            try:
+                # Try to format the date nicely
+                date_obj = datetime.fromisoformat(date_str)
+                date_str = date_obj.strftime("%Y-%m-%d %H:%M:%S")
+            except:
+                # If parsing fails, use the original date string
+                pass
+            
+            # Insert with database ID as tag
+            self.email_tree.insert("", "end", values=(i, sender, subject, date_str), 
+                                  tags=(mail['id'], 'db'))
+        
+        self.status_var.set(f"Found {len(emails)} emails matching '{query}'")
+
+    def clear_search(self):
+        """Clear search and reload inbox"""
+        self.search_var.set("")
+        self.view_user_inbox()
+
+    def delete_selected_email(self):
+        """Delete the selected email"""
+        selection = self.email_tree.selection()
+        
+        if not selection:
+            messagebox.showinfo("No Selection", "Please select an email to delete")
+            return
+        
+        # Get the item and its tags
+        item = selection[0]
+        tags = self.email_tree.item(item, "tags")
+        email_id = tags[0]
+        source_type = tags[1] if len(tags) > 1 else 'file'  # Default to file if not specified
+        
+        # Confirm deletion
+        if not messagebox.askyesno("Confirm Delete", "Are you sure you want to delete this email?"):
+            return
+        
+        try:
+            if source_type == 'db':
+                # Delete from database
+                if self.email_db.delete_email(email_id):
+                    self.status_var.set("Email deleted successfully from database")
+                else:
+                    messagebox.showerror("Error", "Failed to delete email from database")
+                    return
+            else:
+                # Delete from file system
+                email_file = email_id
+                os.remove(email_file)
+                self.status_var.set("Email deleted successfully from file system")
+            
+            # Remove from UI
+            self.email_tree.delete(item)
+            
+            # Clear the content area
+            self.email_content.config(state="normal")
+            self.email_content.delete(1.0, tk.END)
+            self.email_content.config(state="disabled")
+            
+        except Exception as e:
+            messagebox.showerror("Error", f"Failed to delete email: {e}")
+            self.status_var.set(f"Error deleting email: {e}")
+
 def main():
     app = MailClientApp()
     app.mainloop()
